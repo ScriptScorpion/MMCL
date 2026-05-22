@@ -1,5 +1,5 @@
 CC := g++
-CCF := -std=c++17 -Wall -Wextra -s -O1
+CCF := -std=c++17 -Wall -Wextra -s -Os
 SRC := $(wildcard *.cpp)
 OUT := mmclc
 
