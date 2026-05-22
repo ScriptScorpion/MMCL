@@ -230,7 +230,7 @@ bool compile(const std::string &output_file, const std::string &code, const bool
     if (raw_object) {
         return true;
     }
-    system(std::string("ld " + output_file + ".o -o " + output_file).c_str());
+    system(std::string("ld -e 0x401000 " + output_file + ".o -o " + output_file).c_str());
     remove(std::string(output_file + ".o").c_str());
     return true;
 
@@ -249,7 +249,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
     //                      start_position  end_position        name          register_mapped_to_var
     std::vector <std::tuple<const size_t,    const size_t,  const std::string, const std::string>> variables {};
     
-    std::string bin_code = "72 49 192 "; // xor rax, rax
+    std::string bin_code = "";
     std::string file_insiders {};
     char c;
     while (Reader.get(c)) {
@@ -329,7 +329,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
 
                 }
                 
-                for (size_t z = j + 1; z < special_chars.size(); ++z) { // TODO
+                for (size_t z = j + 1; z < special_chars.size(); ++z) {
                     if ((std::get<0>(special_chars[z]) > range_start) && (std::get<0>(special_chars[z]) < range_end)) {
                         switch (std::get<1>(special_chars[z])) {
                             case '+': {
@@ -365,7 +365,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                         return false;
                                     }
                                     std::get<2>(special_chars[z]) = true;
-                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_move(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
                                     bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
                                 }
                                 break;
@@ -403,7 +403,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                         return false;
                                     }
                                     std::get<2>(special_chars[z]) = true;
-                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_move(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
                                     bin_code += bin_subtraction(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
                                 }
 
@@ -442,7 +442,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                         return false;
                                     }
                                     std::get<2>(special_chars[z]) = true;
-                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_move(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
                                     bin_code += bin_rshift(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
                                 }
 
@@ -481,7 +481,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                         return false;
                                     }
                                     std::get<2>(special_chars[z]) = true;
-                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_move(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
                                     bin_code += bin_lshift(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
                                 }
 
@@ -520,7 +520,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                         return false;
                                     }
                                     std::get<2>(special_chars[z]) = true;
-                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_move(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
                                     bin_code += bin_and(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
                                 }
 
@@ -559,7 +559,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                         return false;
                                     }
                                     std::get<2>(special_chars[z]) = true;
-                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_move(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
                                     bin_code += bin_or(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
                                 }
 
@@ -598,7 +598,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                         return false;
                                     }
                                     std::get<2>(special_chars[z]) = true;
-                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_move(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
                                     bin_code += bin_xor(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
                                 }
 
@@ -628,7 +628,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
     }
         
     std::string dec_output = dec_to_str(bin_code);
-    if (dec_output.empty() || bin_code == dec_to_str("72 49 192")) {
+    if (dec_output.empty() || bin_code.empty()) {
         std::cerr << "Error: Code cannot be empty\n";
         return false;
     }

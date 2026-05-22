@@ -32,6 +32,39 @@ std::string get_characters(const char c, const size_t amount) noexcept { // give
     return output;
 }
 
+std::string bin_move(const std::string &reg, const std::string &value) {
+    std::stoll(value, nullptr, 10); // hidden check for overflow
+
+    if (reg == "rax") {
+        return "72 184 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    else if (reg == "rcx") {
+        return "72 185 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    else if (reg == "rdx") {
+        return "72 186 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    else if (reg == "rsi") {
+        return "72 190 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    else if (reg == "rdi") {
+        return "72 191 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    else if (reg == "r8") {
+        return "73 184 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    else if (reg == "r9") {
+        return "73 185 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    else if (reg == "r10") {
+        return "73 186 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    else if (reg == "r11") {
+        return "73 187 " + remove_overflow(value + " ") + get_characters('0', 8 - round(static_cast<double>(value.length()) / 2 ));
+    }
+    throw std::runtime_error("Parsing error, register given is not supported");
+    return "";
+}
 std::string bin_addition(const std::string &reg, const std::string &value) {
     std::stoll(value, nullptr, 10); // hidden check for overflow
 

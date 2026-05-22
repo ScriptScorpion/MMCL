@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-
+std::string bin_move(const std::string &reg, const std::string &value);
 std::string bin_addition(const std::string &reg, const std::string &value);
 std::string bin_subtraction(const std::string &reg, const std::string &value);
 std::string bin_rshift(const std::string &reg, const std::string &value);

@@ -1,7 +1,7 @@
 This is comments btw
 
 start:
-    var a = 2000 + 40
+    var a = 2000 + 40 - 30
     a = 40 > 1
     a = 40 < 1
     a = 40 - 20
