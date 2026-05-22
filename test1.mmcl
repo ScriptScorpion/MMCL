@@ -1,0 +1,10 @@
+This is comments btw
+
+start:
+    var a = 2000 + 40
+    a = 40 > 1
+    a = 40 < 1
+    a = 40 - 20
+    a = 40 & 12
+    a = 40 | 12
+    a = 40 ^ 12

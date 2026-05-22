@@ -1,10 +1,8 @@
-// Here we just ask for file and compiler flags(just create binary, jsut create binary and make object file, default: create binary and make object file and link object file )
-
 #include <iostream>
 #include <cstring>
 #include "parser.hpp"
 
-bool unique_arguments(const int &arguments_amount, char **arguments) {
+bool unique_arguments(const int &arguments_amount, char **arguments) noexcept {
     for (int i = 0; i < arguments_amount; ++i) {
         for (int j = i+1; j < arguments_amount; ++j) {
             if (strcmp(arguments[i], arguments[j]) == 0) {

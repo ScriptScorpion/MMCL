@@ -1,5 +1,3 @@
-// Idea is that you open a file and we map every special character to position(vector<pair<int, char>>) and after that in a loop we see if all is right setted
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -9,7 +7,7 @@
 #include <cstdlib>
 #include "binfuncs.hpp"
 
-std::string map_to_register() { // use this function later then needed
+std::string map_to_register() noexcept {
     static size_t index = 0;
     switch (index) {
         case 0: {
@@ -57,7 +55,7 @@ std::string map_to_register() { // use this function later then needed
     return "";
 }
 
-std::string get_val_from_range(const std::vector<std::tuple<const size_t, const std::string>> &vals, const size_t &range_start, const size_t &range_end, const bool &&side) {
+std::string get_val_from_range(const std::vector<std::tuple<const size_t, const std::string>> &vals, const size_t &range_start, const size_t &range_end, const bool &&side) noexcept {
     std::string output {};
     size_t current_most_closest = range_start;
     if (side == true) {
@@ -88,7 +86,7 @@ std::string get_val_from_range(const std::vector<std::tuple<const size_t, const 
 
     return output;
 }
-bool typeof_variable_name(const std::string &instr, const size_t &range_start, const size_t &range_end) {
+bool typeof_variable_name(const std::string &instr, const size_t &range_start, const size_t &range_end) noexcept {
      for (size_t i = range_start; i < range_end; ++i) {
         if (instr[i] == 'v' && instr[i+1] == 'a' && instr[i+2] == 'r' && instr[i+3] == ' ' && ((i+3) < range_end)) {
             return true;
@@ -169,14 +167,13 @@ std::string dec_to_str(const std::string &decstr) {
     std::string output {};
     std::string temp {};
     for (size_t i = 0; i < decstr.length(); ++i) {
-        if (decstr[i] == ' ') { // fix
+        if (decstr[i] == ' ') {
             output += static_cast<char>(std::stoi(temp, nullptr, 10));
             temp.assign(temp.length(), '\0');
             temp.clear();
         }
         else if (!isdigit(decstr[i])) {
-            std::cerr << "Error: Parsing error, Unsupported character: " << decstr[i] << " ascii code: " << static_cast<int>(decstr[i]) << '\n';
-            exit(100);
+            throw std::runtime_error("Parsing error, Unsupported character: " + decstr[i]);
         }
         else {
             temp += decstr[i];
@@ -192,8 +189,7 @@ size_t find_varname_index(const std::string &var_name, const std::vector <T> &ar
             return i;
         }
     }
-    std::cerr << "Error: Parsing error, variable doesnt exists\n";
-    exit(101);
+    throw std::runtime_error("Parsing error, variable doesnt exists");
     return 0;
 }
 
@@ -218,7 +214,7 @@ void arguments_reset(std::vector <T> &arr) {
     }
 }
 
-bool compile(const std::string &output_file, const std::string &code, const bool &raw_bin, const bool &raw_object) {
+bool compile(const std::string &output_file, const std::string &code, const bool &raw_bin, const bool &raw_object) noexcept {
     std::ofstream Writer(output_file + ".bin");
     if (!Writer) {
         std::cerr << "Error: Failed to open output file for writing\n";
@@ -241,7 +237,6 @@ bool compile(const std::string &output_file, const std::string &code, const bool
 }
 
 bool parse(const std::string &input_file, const std::string &output_file, const bool &raw_bin, const bool &raw_object) noexcept {
-    //std::cout << std::boolalpha << raw_bin << " " << raw_object << " " << input_file << " " << output_file << std::endl; // debug
     std::ifstream Reader(input_file);
     if (!Reader) {
         std::cerr << "Error: Failed to open input file\n";
@@ -334,10 +329,6 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
 
                 }
                 
-                //std::cout << var_name << '\n';
-                //continue;
-                
-
                 for (size_t z = j + 1; z < special_chars.size(); ++z) { // TODO
                     if ((std::get<0>(special_chars[z]) > range_start) && (std::get<0>(special_chars[z]) < range_end)) {
                         switch (std::get<1>(special_chars[z])) {
@@ -376,10 +367,241 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                     std::get<2>(special_chars[z]) = true;
                                     bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
                                     bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
-                                    
-                                    //std::cout << bin_code << '\n'; // DEBUG
-                                    //return false; // DEBUG
                                 }
+                                break;
+                            }
+                            case '-': {
+                                std::string val1 {};
+                                std::string val2 {};
+                                
+                                size_t val_range_start = std::get<0>(special_chars[z])-1;
+                                size_t val_range_end = std::get<0>(special_chars[z])+1;
+                                
+                                while (!ispunct(file_insiders[val_range_start]) && val_range_start > range_start) {
+                                    val_range_start--;
+                                }
+                                val_range_start++;
+                                while (!ispunct(file_insiders[val_range_end]) && val_range_end < range_end) {
+                                    val_range_end++;
+                                }
+                                if (std::get<2>(special_chars[z-1]) == true) {
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    
+                                    bin_code += bin_subtraction(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+                                else {
+                                    val1 = get_val_from_range(special_digits, val_range_start, std::get<0>(special_chars[z]), true);
+                                    if (val1.empty()) {
+                                        return false;
+                                    }
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_subtraction(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+
+                                break;
+                            }
+                            case '>': {
+                                std::string val1 {};
+                                std::string val2 {};
+                                
+                                size_t val_range_start = std::get<0>(special_chars[z])-1;
+                                size_t val_range_end = std::get<0>(special_chars[z])+1;
+                                
+                                while (!ispunct(file_insiders[val_range_start]) && val_range_start > range_start) {
+                                    val_range_start--;
+                                }
+                                val_range_start++;
+                                while (!ispunct(file_insiders[val_range_end]) && val_range_end < range_end) {
+                                    val_range_end++;
+                                }
+                                if (std::get<2>(special_chars[z-1]) == true) {
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    
+                                    bin_code += bin_rshift(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+                                else {
+                                    val1 = get_val_from_range(special_digits, val_range_start, std::get<0>(special_chars[z]), true);
+                                    if (val1.empty()) {
+                                        return false;
+                                    }
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_rshift(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+
+                                break;
+                            }
+                            case '<': {
+                                std::string val1 {};
+                                std::string val2 {};
+                                
+                                size_t val_range_start = std::get<0>(special_chars[z])-1;
+                                size_t val_range_end = std::get<0>(special_chars[z])+1;
+                                
+                                while (!ispunct(file_insiders[val_range_start]) && val_range_start > range_start) {
+                                    val_range_start--;
+                                }
+                                val_range_start++;
+                                while (!ispunct(file_insiders[val_range_end]) && val_range_end < range_end) {
+                                    val_range_end++;
+                                }
+                                if (std::get<2>(special_chars[z-1]) == true) {
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    
+                                    bin_code += bin_lshift(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+                                else {
+                                    val1 = get_val_from_range(special_digits, val_range_start, std::get<0>(special_chars[z]), true);
+                                    if (val1.empty()) {
+                                        return false;
+                                    }
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_lshift(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+
+                                break;
+                            }
+                            case '&': {
+                                std::string val1 {};
+                                std::string val2 {};
+                                
+                                size_t val_range_start = std::get<0>(special_chars[z])-1;
+                                size_t val_range_end = std::get<0>(special_chars[z])+1;
+                                
+                                while (!ispunct(file_insiders[val_range_start]) && val_range_start > range_start) {
+                                    val_range_start--;
+                                }
+                                val_range_start++;
+                                while (!ispunct(file_insiders[val_range_end]) && val_range_end < range_end) {
+                                    val_range_end++;
+                                }
+                                if (std::get<2>(special_chars[z-1]) == true) {
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    
+                                    bin_code += bin_and(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+                                else {
+                                    val1 = get_val_from_range(special_digits, val_range_start, std::get<0>(special_chars[z]), true);
+                                    if (val1.empty()) {
+                                        return false;
+                                    }
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_and(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+
+                                break;
+                            }
+                            case '|': {
+                                std::string val1 {};
+                                std::string val2 {};
+                                
+                                size_t val_range_start = std::get<0>(special_chars[z])-1;
+                                size_t val_range_end = std::get<0>(special_chars[z])+1;
+                                
+                                while (!ispunct(file_insiders[val_range_start]) && val_range_start > range_start) {
+                                    val_range_start--;
+                                }
+                                val_range_start++;
+                                while (!ispunct(file_insiders[val_range_end]) && val_range_end < range_end) {
+                                    val_range_end++;
+                                }
+                                if (std::get<2>(special_chars[z-1]) == true) {
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    
+                                    bin_code += bin_or(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+                                else {
+                                    val1 = get_val_from_range(special_digits, val_range_start, std::get<0>(special_chars[z]), true);
+                                    if (val1.empty()) {
+                                        return false;
+                                    }
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_or(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+
+                                break;
+                            }
+                            case '^': {
+                                std::string val1 {};
+                                std::string val2 {};
+                                
+                                size_t val_range_start = std::get<0>(special_chars[z])-1;
+                                size_t val_range_end = std::get<0>(special_chars[z])+1;
+                                
+                                while (!ispunct(file_insiders[val_range_start]) && val_range_start > range_start) {
+                                    val_range_start--;
+                                }
+                                val_range_start++;
+                                while (!ispunct(file_insiders[val_range_end]) && val_range_end < range_end) {
+                                    val_range_end++;
+                                }
+                                if (std::get<2>(special_chars[z-1]) == true) {
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    
+                                    bin_code += bin_xor(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+                                else {
+                                    val1 = get_val_from_range(special_digits, val_range_start, std::get<0>(special_chars[z]), true);
+                                    if (val1.empty()) {
+                                        return false;
+                                    }
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    bin_code += bin_addition(std::get<3>(variables[find_varname_index(var_name, variables)]), val1);
+                                    bin_code += bin_xor(std::get<3>(variables[find_varname_index(var_name, variables)]), val2);
+                                }
+
                                 break;
                             }
                             default: {
@@ -404,11 +626,7 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
             }
         }
     }
-    
-    for (size_t i = 0; i < variables.size(); ++i) {
-        std::cout << std::get<2>(variables[i]) << '\n'; 
-    }
-
+        
     std::string dec_output = dec_to_str(bin_code);
     if (dec_output.empty() || bin_code == dec_to_str("72 49 192")) {
         std::cerr << "Error: Code cannot be empty\n";
