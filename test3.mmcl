@@ -1,0 +1,5 @@
+FIX ALL so this works
+
+start:
+    var a = 20
+    print(a)

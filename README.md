@@ -9,7 +9,7 @@
 * Enter project directory and run: `make`
 
 ## Disclaimer:
-**MMCL** is right now only for Linux based systems.
+**MMCL** is right now only for Linux x64 based systems.
 
 ## Notes:
 To print output of your equations, use `gdb`.
