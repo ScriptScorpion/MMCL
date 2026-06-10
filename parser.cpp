@@ -151,6 +151,30 @@ std::string variable_declaration_name(const std::string &instr, const size_t &ra
     }
     return output;
 }
+std::string get_string_from_range(const std::string &instr, const size_t &range_start, const size_t &range_end) {
+    std::string output {};
+    for (size_t i = range_start; i < range_end; ++i) {
+        if (isalpha(instr[i])) {
+            for (; i < range_end; ++i) {
+                if (isalpha(instr[i])) {
+                    output += instr[i];
+                }
+                else if (instr[i] == ' ') {
+                    if ((instr[i+1] == ' ') && ((i+1) < range_end)) {
+                        std::cerr << "Error: Syntax error, only one space is allowed\n";
+                        return "";
+                    }
+                    break;
+                }
+                else {
+                    std::cerr << "Error: Syntax error, unexpected character found: " << instr[i] << '\n';
+                    return "";
+                }
+            }
+        }
+    }
+    return output;
+}
 
 std::string get_variable_name(const std::string &instr, const size_t &range_start, const size_t &range_end, 
     std::vector< std::tuple <const size_t, const size_t, const std::string, const std::string> > &vars) { // range_end is '=' pos so dont worry, it will not work on functions
@@ -163,7 +187,7 @@ std::string get_variable_name(const std::string &instr, const size_t &range_star
                     output += instr[i];
                 }
                 else if (instr[i] == ' ') {
-                    if (i+1 < range_end) {
+                    if ((instr[i+1] == ' ') && ((i+1) < range_end)) {
                         std::cerr << "Error: Syntax error, only one space is allowed\n";
                         return "";
                     }
@@ -350,8 +374,19 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                     }
                 }
                 else {
-                    std::cerr << "Error: Syntax error, variable declaration requires 'var' keyword\n";
-                    return false;
+                    var_name = get_string_from_range(file_insiders, range_start, std::get<0>(special_chars[j]));
+                    if (var_name.empty()) {
+                        std::cerr << "Error: Syntax error, usage of the undeclared variable\n";
+                        std::cerr << "Tip: variable declaration requires 'var' keyword\n";
+                        return false;
+                    }
+                    try {
+                        find_varname_index(var_name, variables);
+                    } catch (std::exception &e) {
+                        std::cerr << e.what() << '\n';
+                        std::cerr << "Tip: variable declaration requires 'var' keyword\n";
+                        return false;
+                    }
                 }
                 if ((std::get<0>(special_chars[j+1]) < range_start) || (std::get<0>(special_chars[j+1]) > range_end)) {
                     for (size_t z = 0; z < special_digits.size(); ++z) {
@@ -724,6 +759,51 @@ bool parse(const std::string &input_file, const std::string &output_file, const 
                                     bin_code += bin_move("r15", val2);
                                     bin_code += bin_divide();
                                     bin_code += bin_move_register(std::get<3>(variables[find_varname_index(var_name, variables)]), "r14");
+                                }
+
+                                break;
+                            }
+
+                            case '%': {
+                                std::string val1 {};
+                                std::string val2 {};
+                                
+                                size_t val_range_start = std::get<0>(special_chars[z])-1;
+                                size_t val_range_end = std::get<0>(special_chars[z])+1;
+                                
+                                while (!ispunct(file_insiders[val_range_start]) && val_range_start > range_start) {
+                                    val_range_start--;
+                                }
+                                val_range_start++;
+                                while (!ispunct(file_insiders[val_range_end]) && val_range_end < range_end) {
+                                    val_range_end++;
+                                }
+                                if (std::get<2>(special_chars[z-1]) == true) {
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    
+                                    bin_code += bin_move_register("r14", std::get<3>(variables[find_varname_index(var_name, variables)]));
+                                    bin_code += bin_move("r15", val2);
+                                    bin_code += bin_divide();
+                                    bin_code += bin_move_register(std::get<3>(variables[find_varname_index(var_name, variables)]), "r15");
+                                }
+                                else {
+                                    val1 = get_val_from_range(special_digits, val_range_start, std::get<0>(special_chars[z]), true);
+                                    if (val1.empty()) {
+                                        return false;
+                                    }
+                                    val2 = get_val_from_range(special_digits, std::get<0>(special_chars[z]), val_range_end, false);
+                                    if (val2.empty()) {
+                                        return false;
+                                    }
+                                    std::get<2>(special_chars[z]) = true;
+                                    bin_code += bin_move("r14", val1);
+                                    bin_code += bin_move("r15", val2);
+                                    bin_code += bin_divide();
+                                    bin_code += bin_move_register(std::get<3>(variables[find_varname_index(var_name, variables)]), "r15");
                                 }
 
                                 break;
