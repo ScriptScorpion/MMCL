@@ -127,12 +127,16 @@ std::string variable_declaration_name(const std::string &instr, const size_t &ra
     for (size_t i = range_start; i < range_end; ++i) {
         if (instr[i] == 'v' && instr[i+1] == 'a' && instr[i+2] == 'r' && instr[i+3] == ' ' && ((i+4) < range_end)) {
             i += 4;
+            if (instr[i] == ' ' || instr[i] == '\t') {
+                std::cerr << "Error: Syntax error, only one space is allowed\n";
+                return "";
+            }
             for (; i < range_end; ++i) {
                 if (isalpha(instr[i])) {
                     output += instr[i];
                 }
-                else if (instr[i] == ' ') {
-                    if (i+1 < range_end) {
+                else if (instr[i] == ' ' || instr[i] == '\t') {
+                    if ((instr[i+1] == ' ' || instr[i+1] == '\t') && ((i+1) < range_end)) {
                         std::cerr << "Error: Syntax error, only one space is allowed\n";
                         return "";
                     }
@@ -151,6 +155,7 @@ std::string variable_declaration_name(const std::string &instr, const size_t &ra
     }
     return output;
 }
+
 std::string get_string_from_range(const std::string &instr, const size_t &range_start, const size_t &range_end) {
     std::string output {};
     for (size_t i = range_start; i < range_end; ++i) {
@@ -159,8 +164,8 @@ std::string get_string_from_range(const std::string &instr, const size_t &range_
                 if (isalpha(instr[i])) {
                     output += instr[i];
                 }
-                else if (instr[i] == ' ') {
-                    if ((instr[i+1] == ' ') && ((i+1) < range_end)) {
+                else if (instr[i] == ' ' || instr[i] == '\t') {
+                    if ((instr[i+1] == ' ' || instr[i+1] == '\t') && ((i+1) < range_end)) {
                         std::cerr << "Error: Syntax error, only one space is allowed\n";
                         return "";
                     }
@@ -174,44 +179,6 @@ std::string get_string_from_range(const std::string &instr, const size_t &range_
         }
     }
     return output;
-}
-
-std::string get_variable_name(const std::string &instr, const size_t &range_start, const size_t &range_end, 
-    std::vector< std::tuple <const size_t, const size_t, const std::string, const std::string> > &vars) { // range_end is '=' pos so dont worry, it will not work on functions
-    
-    std::string output {};
-    for (size_t i = range_start; i < range_end; ++i) {
-        if (isalpha(instr[i])) {
-            for (; i < range_end; ++i) {
-                if (isalpha(instr[i])) {
-                    output += instr[i];
-                }
-                else if (instr[i] == ' ') {
-                    if ((instr[i+1] == ' ') && ((i+1) < range_end)) {
-                        std::cerr << "Error: Syntax error, only one space is allowed\n";
-                        return "";
-                    }
-                    break;
-                }
-                else {
-                    std::cerr << "Error: Syntax error, unexpected character found: " << instr[i] << '\n';
-                    return "";
-                }
-            }
-        }
-    }
-    for (size_t i = 0; i < vars.size(); ++i) {
-        if (std::get<2>(vars[i]) == output) {
-            return output;
-        }
-    }
-    
-    if (output.empty()) {
-        std::cerr << "Error: Syntax error, variable name not specified\n";
-        return "";
-    }
-    std::cerr << "Error: Syntax error, variable is not declared\n";
-    return "";
 }
 
 std::string dec_to_str(const std::string &decstr) {
